@@ -3,8 +3,9 @@ package jobs
 import (
 	"context"
 	"fmt"
-	"github.com/go-co-op/gocron"
 	"time"
+
+	"github.com/go-co-op/gocron"
 )
 
 const logFileName = "template_job.log"
@@ -18,7 +19,7 @@ func RunTemplateJob(parentCtx context.Context) {
 	j.l.Printf("template cronjob is setting up...\n")
 
 	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(1).Hour().StartAt(time.Now().Add(1 * time.Hour).Truncate(time.Hour)).Do(j.templateJob)
+	_, err := s.Every(1).Hour().StartAt(time.Now().Add(1 * time.Hour).Truncate(time.Hour)).DoWithJobDetails(j.templateJob)
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize template job. error: %v", err))
 	}
