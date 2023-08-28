@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	jwtSecretEnvVarName = "sports-near-me_JWT_SECRET"
-	apiTokenEnvVarName  = "sports-near-me_API_TOKEN"
+	jwtSecretEnvVarName = "SPORTS-NEAR-ME_JWT_SECRET"
+	apiTokenEnvVarName  = "SPORTS-NEAR-ME_API_TOKEN"
 )
 
 var (
