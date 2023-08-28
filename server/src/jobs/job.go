@@ -19,7 +19,7 @@ type job struct {
 }
 
 func RunAllJobs(ctx context.Context) {
-	go runSportsNearMeJob(ctx)
+	go RunSportsNearMeJob(ctx)
 }
 
 func newJob(ctx context.Context, logFileName, logPrefix string) *job {
