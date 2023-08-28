@@ -2,18 +2,19 @@ package sql_db
 
 import (
 	"fmt"
+	"log"
+	"server/src/logger"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"log"
-	"server/src/logger"
 )
 
 const logFileName = "server.log"
 const logPrefix = "sql_db: "
 
 var (
-	db = "template.db"
+	db = "sports-near-me.db"
 )
 
 type Client struct {

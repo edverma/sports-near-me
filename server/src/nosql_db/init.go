@@ -3,17 +3,18 @@ package nosql_db
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"server/src/logger"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const logFileName = "server.log"
 const logPrefix = "nosql_db: "
 
 const (
-	db      = "template"
+	db      = "sports-near-me"
 	address = "mongodb://localhost:27017"
 )
 

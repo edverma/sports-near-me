@@ -1,16 +1,17 @@
 package jwt
 
 import (
-	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
 	"server/src/env"
 	"server/src/sql_db"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
 const (
 	sessionTokenExpirationSeconds = 2592000 // 30 days
-	appName                       = "template"
+	appName                       = "sports-near-me"
 )
 
 type Claims struct {
