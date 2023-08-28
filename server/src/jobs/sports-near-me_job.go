@@ -19,14 +19,14 @@ func RunSportsNearMeJob(parentCtx context.Context) {
 	j.l.Printf("sports-near-me cronjob is setting up...\n")
 
 	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(1).Hour().StartAt(time.Now().Add(1 * time.Hour).Truncate(time.Hour)).DoWithJobDetails(j.SportsNearMeJob)
+	_, err := s.Every(1).Hour().StartAt(time.Now().Add(1 * time.Hour).Truncate(time.Hour)).DoWithJobDetails(j.sportsNearMeJob)
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize sports-near-me job. error: %v", err))
 	}
 	s.StartBlocking()
 }
 
-func (j *job) SportsNearMeJob(cron gocron.Job) {
+func (j *job) sportsNearMeJob(cron gocron.Job) {
 	j.l.Printf("running sports-near-me job....")
 
 	for i := 0; i < 100; i++ {
