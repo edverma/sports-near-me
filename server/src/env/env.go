@@ -2,13 +2,14 @@ package env
 
 import (
 	"fmt"
-	"github.com/golang-jwt/jwt"
 	"os"
+
+	"github.com/golang-jwt/jwt"
 )
 
 const (
-	jwtSecretEnvVarName = "TEMPLATE_JWT_SECRET"
-	apiTokenEnvVarName  = "TEMPLATE_API_TOKEN"
+	jwtSecretEnvVarName = "SPORTS-NEAR-ME_JWT_SECRET"
+	apiTokenEnvVarName  = "SPORTS-NEAR-ME_API_TOKEN"
 )
 
 var (

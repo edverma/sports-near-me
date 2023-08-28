@@ -2,12 +2,13 @@ package jobs
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	"log"
 	"server/src/cache"
 	"server/src/logger"
 	"server/src/nosql_db"
 	"server/src/sql_db"
+
+	"github.com/gin-gonic/gin"
 )
 
 type job struct {
@@ -18,7 +19,7 @@ type job struct {
 }
 
 func RunAllJobs(ctx context.Context) {
-	go RunTemplateJob(ctx)
+	go RunSportsNearMeJob(ctx)
 }
 
 func newJob(ctx context.Context, logFileName, logPrefix string) *job {
