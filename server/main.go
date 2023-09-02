@@ -6,6 +6,7 @@ import (
 	"os"
 	"server/src/api"
 	"server/src/jobs"
+	"sync"
 )
 
 func main() {
@@ -17,6 +18,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	jobs.RunAllJobs(ctx)
-	api.Run(ctx)
+	var once sync.Once
+	jobs.RunAllJobs(ctx, &once)
+	api.Run(ctx, &once)
 }
