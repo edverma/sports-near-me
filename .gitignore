@@ -54,3 +54,4 @@ internal
 .svelte-kit
 
 *~
+*.rdb

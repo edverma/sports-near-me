@@ -3,11 +3,10 @@ package jobs
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
-
 	"io"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/go-co-op/gocron"
 )
