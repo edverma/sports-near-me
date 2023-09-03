@@ -2,10 +2,11 @@ package cache
 
 import (
 	"context"
-	"github.com/go-redis/redis/v9"
 	"log"
 	"server/src/env"
 	"server/src/logger"
+
+	"github.com/go-redis/redis/v9"
 )
 
 const (
@@ -33,6 +34,8 @@ func Initialize() *Client {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
+	//connection string: client:= ConnectionMultiplexer.Connect($"{Host_name}:{Port_Number},password={pass}");
+	// Need to grab db connection and  run = redis.GetDatabase().Ping()
 	seedData(client)
 
 	return &Client{l, client}
