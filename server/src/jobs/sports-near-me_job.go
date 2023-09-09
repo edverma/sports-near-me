@@ -87,8 +87,7 @@ func (j *job) sportsNearMeJob(cron gocron.Job) {
 	if err != nil {
 		j.l.Printf("failed to get HTTP. error: %v", err)
 	}
-
-	//defer resp.Body.Close()
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
