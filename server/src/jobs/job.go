@@ -7,8 +7,7 @@ import (
 	"server/src/logger"
 	"server/src/nosql_db"
 	"server/src/sql_db"
-
-	"github.com/gin-gonic/gin"
+	"sync"
 )
 
 type job struct {
@@ -18,15 +17,15 @@ type job struct {
 	cacheClient cache.ClientI
 }
 
-func RunAllJobs(ctx context.Context) {
-	go RunSportsNearMeJob(ctx)
+func RunAllJobs(ctx context.Context, once *sync.Once) {
+	go RunSportsNearMeJob(ctx, once)
 }
 
-func newJob(ctx context.Context, logFileName, logPrefix string) *job {
+func newJob(ctx context.Context, logFileName, logPrefix string, once *sync.Once) *job {
 	nosqlClient := nosql_db.Initialize(ctx)
-	sqlClient := sql_db.Initialize()
+	sqlClient := sql_db.Initialize(once)
 	cacheClient := cache.Initialize()
 
-	l := logger.InitLogger(logFileName, logPrefix, gin.DefaultWriter)
+	l := logger.InitLogger(logFileName, logPrefix, nil)
 	return &job{l, nosqlClient, sqlClient, cacheClient}
 }

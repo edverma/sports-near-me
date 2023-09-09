@@ -3,12 +3,14 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"server/src/cache"
 	"server/src/logger"
 	"server/src/nosql_db"
 	"server/src/sql_db"
+	"sync"
+
+	"github.com/gin-gonic/gin"
 )
 
 const logFileName = "server.log"
@@ -21,9 +23,9 @@ type server struct {
 	cacheClient cache.ClientI
 }
 
-func Run(ctx context.Context) {
+func Run(ctx context.Context, once *sync.Once) {
 	nosqlClient := nosql_db.Initialize(ctx)
-	sqlClient := sql_db.Initialize()
+	sqlClient := sql_db.Initialize(once)
 	cacheClient := cache.Initialize()
 
 	l := logger.InitLogger(logFileName, logPrefix, gin.DefaultWriter)

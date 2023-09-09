@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"server/src/logger"
+	"sync"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -30,17 +31,19 @@ type ClientI interface {
 	CreateUserCredential(userCredential *UserCredential) error
 }
 
-func Initialize() *Client {
+func Initialize(once *sync.Once) *Client {
 	l := logger.InitLogger(logFileName, logPrefix, nil)
 	client, err := gorm.Open(sqlite.Open(db), &gorm.Config{})
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to database. error: %v", err))
 	}
 
-	err = client.AutoMigrate(&Credential{}, &User{})
-	if err != nil {
-		panic(fmt.Errorf("automigrate failed. error: %v", err))
-	}
+	once.Do(func() {
+		err = client.AutoMigrate(&Credential{}, &User{})
+		if err != nil {
+			panic(fmt.Errorf("automigrate failed. error: %v", err))
+		}
+	})
 
 	seedData(client)
 

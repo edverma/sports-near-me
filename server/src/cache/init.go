@@ -2,10 +2,11 @@ package cache
 
 import (
 	"context"
-	"github.com/go-redis/redis/v9"
 	"log"
 	"server/src/env"
 	"server/src/logger"
+
+	"github.com/go-redis/redis/v9"
 )
 
 const (
