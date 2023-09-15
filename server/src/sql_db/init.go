@@ -5,6 +5,7 @@ import (
 	"log"
 	"server/src/logger"
 	"sync"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -29,7 +30,8 @@ type ClientI interface {
 	CreateUser(tx *gorm.DB, user *User) error
 	GetUser(user *User) (*User, error)
 	CreateUserCredential(userCredential *UserCredential) error
-	CreateGameData(tx *gorm.DB, game_data *GameData) error
+	CreateGameData(tx *gorm.DB, game_data *Game) error
+	GetGame(game_data *Game) (*Game, error)
 }
 
 func Initialize(once *sync.Once) *Client {
@@ -40,7 +42,7 @@ func Initialize(once *sync.Once) *Client {
 	}
 
 	once.Do(func() {
-		err = client.AutoMigrate(&Credential{}, &User{}, &GameData{})
+		err = client.AutoMigrate(&Credential{}, &User{}, &Game{})
 		if err != nil {
 			panic(fmt.Errorf("automigrate failed. error: %v", err))
 		}
@@ -106,11 +108,11 @@ func setupUsers() []*User {
 	}
 }
 
-func setupGameDate() []*GameData {
-	return []*GameData{
+func setupGameDate() []*Game {
+	return []*Game{
 		{
-			Game_Id:  "1",
-			Date:     "2023-07-01",
+			Id:       "1",
+			Date:     time.Now(),
 			HomeTeam: "Gwinnett Stripers",
 			AwayTeam: "Beep Boops",
 			Venue:    "Truist Park",

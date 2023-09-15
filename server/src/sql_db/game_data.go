@@ -1,31 +1,33 @@
 package sql_db
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-type GameData struct {
-	Game_Id  string `gorm:"primaryKey" json:"id"`
-	Date     string `gorm:"unique" json:"date"`
-	HomeTeam string `json:"home_team"`
-	AwayTeam string `json:"away_team"`
-	Venue    string `json:"venue"`
-	Address  string `json:"address"`
+type Game struct {
+	Id       string    `gorm:"primaryKey" json:"id"`
+	Date     time.Time `gorm:"unique" json:"date"`
+	HomeTeam string    `gorm:"unique" json:"home_team"`
+	AwayTeam string    `gorm:"unique" json:"away_team"`
+	Venue    string    `gorm:"unique" json:"venue"`
+	Address  string    `gorm:"unique" json:"address"`
 }
 
-func (c *Client) CreateGameData(tx *gorm.DB, game_data *GameData) error {
-	game_data.Game_Id = uuid.NewString()
+func (c *Client) CreateGameData(tx *gorm.DB, game_data *Game) error {
+	game_data.Id = uuid.NewString()
 	err := tx.Create(game_data).Error
 	if err != nil {
-		c.l.Printf("failed to create new row in users table. error: %v", err)
+		c.l.Printf("failed to create new row in users games table. error: %v", err)
 		return err
 	}
 	return nil
 }
 
-func (c *Client) GetGameData(game_data *GameData) (*GameData, error) {
-	var dbGameData GameData
+func (c *Client) GetGame(game_data *Game) (*Game, error) {
+	var dbGameData Game
 	err := c.client.Where(game_data).First(&dbGameData).Error
 	if err != nil {
 		c.l.Printf("failed to get user. error: %v", err)
