@@ -29,6 +29,7 @@ type ClientI interface {
 	CreateUser(tx *gorm.DB, user *User) error
 	GetUser(user *User) (*User, error)
 	CreateUserCredential(userCredential *UserCredential) error
+	CreateGameData(tx *gorm.DB, game_data *GameData) error
 }
 
 func Initialize(once *sync.Once) *Client {
@@ -39,7 +40,7 @@ func Initialize(once *sync.Once) *Client {
 	}
 
 	once.Do(func() {
-		err = client.AutoMigrate(&Credential{}, &User{})
+		err = client.AutoMigrate(&Credential{}, &User{}, &GameData{})
 		if err != nil {
 			panic(fmt.Errorf("automigrate failed. error: %v", err))
 		}
@@ -53,12 +54,17 @@ func Initialize(once *sync.Once) *Client {
 func seedData(dbConn *gorm.DB) {
 	credentials := setupCredentials()
 	users := setupUsers()
+	game_data := setupGameDate()
 
 	err := dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(credentials).Error
 	if err != nil {
 		panic(err)
 	}
 	err = dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(users).Error
+	if err != nil {
+		panic(err)
+	}
+	err = dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(game_data).Error
 	if err != nil {
 		panic(err)
 	}
@@ -96,6 +102,19 @@ func setupUsers() []*User {
 			Email:        "test-user-2@test.com",
 			FirstName:    "First2",
 			LastName:     "Last2",
+		},
+	}
+}
+
+func setupGameDate() []*GameData {
+	return []*GameData{
+		{
+			Game_Id:  "1",
+			Date:     "2023-07-01",
+			HomeTeam: "Gwinnett Stripers",
+			AwayTeam: "Beep Boops",
+			Venue:    "Truist Park",
+			Address:  "360 N. Broadway Street St. Paul  55101 Minnesota",
 		},
 	}
 }
