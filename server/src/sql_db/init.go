@@ -5,6 +5,7 @@ import (
 	"log"
 	"server/src/logger"
 	"sync"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -29,6 +30,8 @@ type ClientI interface {
 	CreateUser(tx *gorm.DB, user *User) error
 	GetUser(user *User) (*User, error)
 	CreateUserCredential(userCredential *UserCredential) error
+	CreateGame(game *Game) error
+	GetGame(game *Game) (*Game, error)
 }
 
 func Initialize(once *sync.Once) *Client {
@@ -39,7 +42,7 @@ func Initialize(once *sync.Once) *Client {
 	}
 
 	once.Do(func() {
-		err = client.AutoMigrate(&Credential{}, &User{})
+		err = client.AutoMigrate(&Credential{}, &User{}, &Game{})
 		if err != nil {
 			panic(fmt.Errorf("automigrate failed. error: %v", err))
 		}
@@ -53,12 +56,17 @@ func Initialize(once *sync.Once) *Client {
 func seedData(dbConn *gorm.DB) {
 	credentials := setupCredentials()
 	users := setupUsers()
+	game := setupGame()
 
 	err := dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(credentials).Error
 	if err != nil {
 		panic(err)
 	}
 	err = dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(users).Error
+	if err != nil {
+		panic(err)
+	}
+	err = dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(game).Error
 	if err != nil {
 		panic(err)
 	}
@@ -96,6 +104,19 @@ func setupUsers() []*User {
 			Email:        "test-user-2@test.com",
 			FirstName:    "First2",
 			LastName:     "Last2",
+		},
+	}
+}
+
+func setupGame() []*Game {
+	return []*Game{
+		{
+			Id:       "1",
+			Date:     time.Now(),
+			HomeTeam: "Gwinnett Stripers",
+			AwayTeam: "Beep Boops",
+			Venue:    "Truist Park",
+			Address:  "360 N. Broadway Street St. Paul  55101 Minnesota",
 		},
 	}
 }
