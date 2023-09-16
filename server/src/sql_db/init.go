@@ -30,8 +30,8 @@ type ClientI interface {
 	CreateUser(tx *gorm.DB, user *User) error
 	GetUser(user *User) (*User, error)
 	CreateUserCredential(userCredential *UserCredential) error
-	CreateGameData(tx *gorm.DB, game_data *Game) error
-	GetGame(game_data *Game) (*Game, error)
+	CreateGame(tx *gorm.DB, game *Game) error
+	GetGame(game *Game) (*Game, error)
 }
 
 func Initialize(once *sync.Once) *Client {
@@ -56,7 +56,7 @@ func Initialize(once *sync.Once) *Client {
 func seedData(dbConn *gorm.DB) {
 	credentials := setupCredentials()
 	users := setupUsers()
-	game_data := setupGameDate()
+	game := setupGame()
 
 	err := dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(credentials).Error
 	if err != nil {
@@ -66,7 +66,7 @@ func seedData(dbConn *gorm.DB) {
 	if err != nil {
 		panic(err)
 	}
-	err = dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(game_data).Error
+	err = dbConn.Clauses(clause.OnConflict{DoNothing: true}).Create(game).Error
 	if err != nil {
 		panic(err)
 	}
@@ -108,7 +108,7 @@ func setupUsers() []*User {
 	}
 }
 
-func setupGameDate() []*Game {
+func setupGame() []*Game {
 	return []*Game{
 		{
 			Id:       "1",
