@@ -30,7 +30,7 @@ type ClientI interface {
 	CreateUser(tx *gorm.DB, user *User) error
 	GetUser(user *User) (*User, error)
 	CreateUserCredential(userCredential *UserCredential) error
-	CreateGame(tx *gorm.DB, game *Game) error
+	CreateGame(game *Game) error
 	GetGame(game *Game) (*Game, error)
 }
 
