@@ -13,6 +13,9 @@ type Game struct {
 	AwayTeam string    `json:"away_team"`
 	Venue    string    `json:"venue"`
 	Address  string    `json:"address"`
+	State    string    `json:"state"`
+	City     string    `json:"city"`
+	Zipcode  string    `json:"postalCode"`
 }
 
 func (c *Client) CreateGame(game *Game) error {
