@@ -116,7 +116,10 @@ func setupGame() []*Game {
 			HomeTeam: "Gwinnett Stripers",
 			AwayTeam: "Beep Boops",
 			Venue:    "Truist Park",
-			Address:  "360 N. Broadway Street St. Paul  55101 Minnesota",
+			Address:  "360 N. Broadway Street St. Paul",
+			State:    "Georgia",
+			City:     "Atlanta",
+			Zipcode:  "30314",
 		},
 	}
 }

@@ -4,15 +4,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Game struct {
-	Id       string    `gorm:"primaryKey" json:"id"`
-	Date     time.Time `gorm:"unique" json:"date"`
-	HomeTeam string    `json:"home_team"`
-	AwayTeam string    `json:"away_team"`
-	Venue    string    `json:"venue"`
-	Address  string    `json:"address"`
+	Id        string         `gorm:"primaryKey" json:"id"`
+	Date      time.Time      `json:"date"`
+	HomeTeam  string         `json:"home_team"`
+	AwayTeam  string         `json:"away_team"`
+	Venue     string         `json:"venue"`
+	Address   string         `json:"address"`
+	State     string         `json:"state"`
+	City      string         `json:"city"`
+	Zipcode   string         `json:"postalCode"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 func (c *Client) CreateGame(game *Game) error {

@@ -32,7 +32,6 @@ func Initialize(ctx context.Context) ClientI {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(address))
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to mongo database. error: %v", err))
-		return nil
 	}
 
 	issueColl := client.Database(db).Collection("issues")
