@@ -72,14 +72,6 @@ func seedData(dbConn *gorm.DB) {
 	}
 }
 
-func RunSportsNearMeJob() {
-	panic("unimplemented")
-}
-
-//func sportsNearMeJob() {
-//	panic("unimplemented")
-//}
-
 func setupCredentials() []*Credential {
 	return []*Credential{
 		{
