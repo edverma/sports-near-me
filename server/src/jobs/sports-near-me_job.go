@@ -118,7 +118,7 @@ func (j *job) sportsNearMeJob(cron gocron.Job) {
 		log.Fatal(jsonErr)
 	}
 
-	dateString := (res.Dates[0].Date)
+	dateString := res.Dates[0].Date
 
 	j.sqlClient.CreateGame(&sql_db.Game{
 		Id:       uuid.NewString(),
