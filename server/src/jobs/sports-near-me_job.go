@@ -84,7 +84,7 @@ type ScheduleResponse struct {
 	Dates []Date `json:"dates"`
 }
 
-func parseDate(str string) []int {
+func parseDate(str string) time.Time {
 	dateArr := strings.Split(str, "-")
 	dateInt := []int{}
 	for i := 0; i < 3; i++ {
@@ -94,7 +94,8 @@ func parseDate(str string) []int {
 		}
 		dateInt = append(dateInt, intArr)
 	}
-	return dateInt
+	t := time.Date(dateInt[0], time.Month(dateInt[1]), dateInt[2], 0, 0, 0, 0, time.UTC)
+	return t
 }
 
 func (j *job) sportsNearMeJob(cron gocron.Job) {
@@ -119,11 +120,9 @@ func (j *job) sportsNearMeJob(cron gocron.Job) {
 
 	dateString := (res.Dates[0].Date)
 
-	t := time.Date(parseDate(dateString)[0], time.Month(parseDate(dateString)[1]), parseDate(dateString)[2], 0, 0, 0, 0, time.UTC)
-
 	j.sqlClient.CreateGame(&sql_db.Game{
 		Id:       uuid.NewString(),
-		Date:     t,
+		Date:     parseDate(dateString),
 		HomeTeam: res.Dates[0].Games[0].Teams.Home.HomeTeamName.Name,
 		AwayTeam: res.Dates[0].Games[0].Teams.Away.AwayTeamName.Name,
 		Venue:    res.Dates[0].Games[0].Venue.Name,
