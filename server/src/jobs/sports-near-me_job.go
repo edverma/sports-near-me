@@ -86,30 +86,30 @@ type ScheduleResponse struct {
 
 func parseDate(str string) time.Time {
 	dateArr := strings.Split(str, "-")
-	dateInt := []int{}
-	for i := 0; i < 3; i++ {
+	dateArrInt := []int{}
+	for i := 0; i < len(dateArr); i++ {
 		intArr, err := strconv.Atoi(dateArr[i])
 		if err != nil {
 			panic(err)
 		}
-		dateInt = append(dateInt, intArr)
+		dateArrInt = append(dateArrInt, intArr)
 	}
-	t := time.Date(dateInt[0], time.Month(dateInt[1]), dateInt[2], 0, 0, 0, 0, time.UTC)
+	t := time.Date(dateArrInt[0], time.Month(dateArrInt[1]), dateArrInt[2], 0, 0, 0, 0, time.UTC)
 	return t
 }
 
-func (j *job) sportsNearMeJob(cron gocron.Job) {
-	j.l.Printf("running sports-near-me job....")
+func (jb *job) sportsNearMeJob(cron gocron.Job) {
+	jb.l.Printf("running sports-near-me job....")
 
 	resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=2023&startDate=2023-07-01&endDate=2023-07-31&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
 	if err != nil {
-		j.l.Printf("failed to get HTTP. error: %v", err)
+		jb.l.Printf("failed to get HTTP. error: %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		j.l.Printf("failed to read all HTTP. error: %v", err)
+		jb.l.Printf("failed to read all HTTP. error: %v", err)
 	}
 
 	var res ScheduleResponse
@@ -118,17 +118,22 @@ func (j *job) sportsNearMeJob(cron gocron.Job) {
 		log.Fatal(jsonErr)
 	}
 
-	dateString := res.Dates[0].Date
-
-	j.sqlClient.CreateGame(&sql_db.Game{
-		Id:       uuid.NewString(),
-		Date:     parseDate(dateString),
-		HomeTeam: res.Dates[0].Games[0].Teams.Home.HomeTeamName.Name,
-		AwayTeam: res.Dates[0].Games[0].Teams.Away.AwayTeamName.Name,
-		Venue:    res.Dates[0].Games[0].Venue.Name,
-		Address:  res.Dates[0].Games[0].Venue.Location.Address1,
-		State:    res.Dates[0].Games[0].Venue.Location.State,
-		City:     res.Dates[0].Games[0].Venue.Location.City,
-		Zipcode:  res.Dates[0].Games[0].Venue.Location.PostalCode,
-	})
+	for i := range res.Dates {
+		lenGames := len(res.Dates[i].Games)
+		date := res.Dates[i].Date
+		for j := 0; j < lenGames; j++ {
+			game := res.Dates[i].Games[j]
+			jb.sqlClient.CreateGame(&sql_db.Game{
+				Id:       uuid.NewString(),
+				Date:     parseDate(date),
+				HomeTeam: game.Teams.Home.HomeTeamName.Name,
+				AwayTeam: game.Teams.Away.AwayTeamName.Name,
+				Venue:    game.Venue.Name,
+				Address:  game.Venue.Location.Address1,
+				State:    game.Venue.Location.State,
+				City:     game.Venue.Location.City,
+				Zipcode:  game.Venue.Location.PostalCode,
+			})
+		}
+	}
 }
