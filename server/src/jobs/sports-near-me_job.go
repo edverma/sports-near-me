@@ -100,40 +100,51 @@ func parseDate(str string) time.Time {
 
 func (jb *job) sportsNearMeJob(cron gocron.Job) {
 	jb.l.Printf("running sports-near-me job....")
+	year := 2023
+	month := 07
+	for loop := 0; loop < 24; loop++ {
+		month = month + 1
+		if month == 13 {
+			month = 1
+			year = year + 1
+		}
+		monthstr := strconv.Itoa(month)
+		yearstr := strconv.Itoa(year)
+		resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-31&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
+		if err != nil {
+			jb.l.Printf("failed to get HTTP. error: %v", err)
+		}
+		defer resp.Body.Close()
 
-	resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=2023&startDate=2023-07-01&endDate=2023-07-31&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
-	if err != nil {
-		jb.l.Printf("failed to get HTTP. error: %v", err)
-	}
-	defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			jb.l.Printf("failed to read all HTTP. error: %v", err)
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		jb.l.Printf("failed to read all HTTP. error: %v", err)
-	}
+		var res ScheduleResponse
+		jsonErr := json.Unmarshal(body, &res)
+		if jsonErr != nil {
+			log.Fatal(jsonErr)
+		}
 
-	var res ScheduleResponse
-	jsonErr := json.Unmarshal(body, &res)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
-	for i := range res.Dates {
-		lenGames := len(res.Dates[i].Games)
-		date := res.Dates[i].Date
-		for j := 0; j < lenGames; j++ {
-			game := res.Dates[i].Games[j]
-			jb.sqlClient.CreateGame(&sql_db.Game{
-				Id:       uuid.NewString(),
-				Date:     parseDate(date),
-				HomeTeam: game.Teams.Home.HomeTeamName.Name,
-				AwayTeam: game.Teams.Away.AwayTeamName.Name,
-				Venue:    game.Venue.Name,
-				Address:  game.Venue.Location.Address1,
-				State:    game.Venue.Location.State,
-				City:     game.Venue.Location.City,
-				Zipcode:  game.Venue.Location.PostalCode,
-			})
+		for i := range res.Dates {
+			lenGames := len(res.Dates[i].Games)
+			date := res.Dates[i].Date
+			for j := 0; j < lenGames; j++ {
+				game := res.Dates[i].Games[j]
+				jb.sqlClient.CreateGame(&sql_db.Game{
+					Id:       uuid.NewString(),
+					Date:     parseDate(date),
+					HomeTeam: game.Teams.Home.HomeTeamName.Name,
+					AwayTeam: game.Teams.Away.AwayTeamName.Name,
+					Venue:    game.Venue.Name,
+					Address:  game.Venue.Location.Address1,
+					State:    game.Venue.Location.State,
+					City:     game.Venue.Location.City,
+					Zipcode:  game.Venue.Location.PostalCode,
+				})
+			}
 		}
 	}
+	//startDate should be what user inputs end date should be 24 months afte
 }
