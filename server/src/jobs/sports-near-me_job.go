@@ -98,19 +98,27 @@ func parseDate(str string) time.Time {
 	return t
 }
 
+func daysIn(m time.Month, year int) int {
+	return time.Date(year, m+1, 0, 0, 0, 0, 0, time.UTC).Day()
+}
+
 func (jb *job) sportsNearMeJob(cron gocron.Job) {
 	jb.l.Printf("running sports-near-me job....")
-	year := 2023
-	month := 07
+	now := time.Now()
+	year := now.Year()
+	month := int(now.Month())
 	for loop := 0; loop < 24; loop++ {
-		month = month + 1
 		if month == 13 {
 			month = 1
 			year = year + 1
 		}
+		days := daysIn(time.Month(month), year)
 		monthstr := strconv.Itoa(month)
 		yearstr := strconv.Itoa(year)
-		resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-31&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
+		daysStr := strconv.Itoa(days)
+		resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-" + daysStr + "&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
+		jb.l.Print(year)
+		jb.l.Print(month)
 		if err != nil {
 			jb.l.Printf("failed to get HTTP. error: %v", err)
 		}
@@ -120,13 +128,13 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 		if err != nil {
 			jb.l.Printf("failed to read all HTTP. error: %v", err)
 		}
+		jb.l.Print(resp)
 
 		var res ScheduleResponse
 		jsonErr := json.Unmarshal(body, &res)
 		if jsonErr != nil {
 			log.Fatal(jsonErr)
 		}
-
 		for i := range res.Dates {
 			lenGames := len(res.Dates[i].Games)
 			date := res.Dates[i].Date
@@ -145,6 +153,10 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 				})
 			}
 		}
+		month = month + 1
 	}
-	//startDate should be what user inputs end date should be 24 months afte
+}
+
+func Year(time time.Time) {
+	panic("unimplemented")
 }
