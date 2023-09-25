@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"server/src/sql_db"
 	"strconv"
@@ -20,6 +19,7 @@ import (
 const logFileName = "sports-near-me_job.log"
 const logPrefix = "sports-near-me_job: "
 const pace = 1 * time.Second
+const numMonthsToSetScheduleInfo = 24
 
 func RunSportsNearMeJob(parentCtx context.Context, once *sync.Once) {
 	ctx, cancel := context.WithCancel(parentCtx)
@@ -98,8 +98,47 @@ func parseDate(str string) time.Time {
 	return t
 }
 
-func daysIn(month int, year int) int {
+func daysIn(month, year int) int {
 	return time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
+}
+
+func createRequestUrl(month, year int) string {
+	days := daysIn(month, year)
+	monthstr := strconv.Itoa(month)
+	yearstr := strconv.Itoa(year)
+	daysStr := strconv.Itoa(days)
+	urlStr := "https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-" + daysStr + "&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref"
+	return urlStr
+}
+
+func (jb *job) insertGamesdb(res ScheduleResponse) {
+	for i := range res.Dates {
+		lenGames := len(res.Dates[i].Games)
+		date := res.Dates[i].Date
+		for j := 0; j < lenGames; j++ {
+			game := res.Dates[i].Games[j]
+			jb.sqlClient.CreateGame(&sql_db.Game{
+				Id:       uuid.NewString(),
+				Date:     parseDate(date),
+				HomeTeam: game.Teams.Home.HomeTeamName.Name,
+				AwayTeam: game.Teams.Away.AwayTeamName.Name,
+				Venue:    game.Venue.Name,
+				Address:  game.Venue.Location.Address1,
+				State:    game.Venue.Location.State,
+				City:     game.Venue.Location.City,
+				Zipcode:  game.Venue.Location.PostalCode,
+			})
+		}
+	}
+}
+
+func incrementMonth(month, year int) (int, int) {
+	if month == 13 {
+		month = 1
+		year = year + 1
+	}
+	month++
+	return month, year
 }
 
 func (jb *job) sportsNearMeJob(cron gocron.Job) {
@@ -107,13 +146,9 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 	now := time.Now()
 	year := now.Year()
 	month := int(now.Month())
-	numMonthsToSetScheduleInfo := 24
 	for loop := 0; loop < numMonthsToSetScheduleInfo; loop++ {
-		days := daysIn(month, year)
-		monthstr := strconv.Itoa(month)
-		yearstr := strconv.Itoa(year)
-		daysStr := strconv.Itoa(days)
-		resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-" + daysStr + "&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
+		url := createRequestUrl(month, year)
+		resp, err := http.Get(url)
 		if err != nil {
 			jb.l.Printf("failed to get HTTP. error: %v", err)
 		}
@@ -127,34 +162,11 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 		var res ScheduleResponse
 		jsonErr := json.Unmarshal(body, &res)
 		if jsonErr != nil {
-			log.Fatal(jsonErr)
+			jb.l.Print(jsonErr)
 		}
-		for i := range res.Dates {
-			lenGames := len(res.Dates[i].Games)
-			date := res.Dates[i].Date
-			for j := 0; j < lenGames; j++ {
-				game := res.Dates[i].Games[j]
-				jb.sqlClient.CreateGame(&sql_db.Game{
-					Id:       uuid.NewString(),
-					Date:     parseDate(date),
-					HomeTeam: game.Teams.Home.HomeTeamName.Name,
-					AwayTeam: game.Teams.Away.AwayTeamName.Name,
-					Venue:    game.Venue.Name,
-					Address:  game.Venue.Location.Address1,
-					State:    game.Venue.Location.State,
-					City:     game.Venue.Location.City,
-					Zipcode:  game.Venue.Location.PostalCode,
-				})
-			}
-		}
-		if month == 13 {
-			month = 1
-			year = year + 1
-		}
-		month++
-	}
-}
 
-func Year(time time.Time) {
-	panic("unimplemented")
+		jb.insertGamesdb(res)
+
+		month, year = incrementMonth(month, year)
+	}
 }
