@@ -98,8 +98,8 @@ func parseDate(str string) time.Time {
 	return t
 }
 
-func daysIn(m time.Month, year int) int {
-	return time.Date(year, m+1, 0, 0, 0, 0, 0, time.UTC).Day()
+func daysIn(month int, year int) int {
+	return time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
 }
 
 func (jb *job) sportsNearMeJob(cron gocron.Job) {
@@ -107,18 +107,13 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 	now := time.Now()
 	year := now.Year()
 	month := int(now.Month())
-	for loop := 0; loop < 24; loop++ {
-		if month == 13 {
-			month = 1
-			year = year + 1
-		}
-		days := daysIn(time.Month(month), year)
+	numMonthsToSetScheduleInfo := 24
+	for loop := 0; loop < numMonthsToSetScheduleInfo; loop++ {
+		days := daysIn(month, year)
 		monthstr := strconv.Itoa(month)
 		yearstr := strconv.Itoa(year)
 		daysStr := strconv.Itoa(days)
 		resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-" + daysStr + "&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
-		jb.l.Print(year)
-		jb.l.Print(month)
 		if err != nil {
 			jb.l.Printf("failed to get HTTP. error: %v", err)
 		}
@@ -128,7 +123,6 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 		if err != nil {
 			jb.l.Printf("failed to read all HTTP. error: %v", err)
 		}
-		jb.l.Print(resp)
 
 		var res ScheduleResponse
 		jsonErr := json.Unmarshal(body, &res)
@@ -153,7 +147,11 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 				})
 			}
 		}
-		month = month + 1
+		if month == 13 {
+			month = 1
+			year = year + 1
+		}
+		month++
 	}
 }
 
