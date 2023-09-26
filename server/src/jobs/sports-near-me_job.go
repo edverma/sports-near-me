@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"server/src/sql_db"
 	"strconv"
@@ -20,6 +19,7 @@ import (
 const logFileName = "sports-near-me_job.log"
 const logPrefix = "sports-near-me_job: "
 const pace = 1 * time.Second
+const numMonthsToSetScheduleInfo = 24
 
 func RunSportsNearMeJob(parentCtx context.Context, once *sync.Once) {
 	ctx, cancel := context.WithCancel(parentCtx)
@@ -84,6 +84,36 @@ type ScheduleResponse struct {
 	Dates []Date `json:"dates"`
 }
 
+func (jb *job) sportsNearMeJob(cron gocron.Job) {
+	jb.l.Printf("running sports-near-me job....")
+	now := time.Now()
+	year := now.Year()
+	month := int(now.Month())
+	for loop := 0; loop < numMonthsToSetScheduleInfo; loop++ {
+		url := createRequestUrl(month, year)
+		resp, err := http.Get(url)
+		if err != nil {
+			jb.l.Printf("failed to get HTTP. error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			jb.l.Printf("failed to read all HTTP. error: %v", err)
+		}
+
+		var res ScheduleResponse
+		jsonErr := json.Unmarshal(body, &res)
+		if jsonErr != nil {
+			jb.l.Print(jsonErr)
+		}
+
+		jb.insertGamesdb(res)
+
+		month, year = incrementMonth(month, year)
+	}
+}
+
 func parseDate(str string) time.Time {
 	dateArr := strings.Split(str, "-")
 	dateArrInt := []int{}
@@ -98,26 +128,20 @@ func parseDate(str string) time.Time {
 	return t
 }
 
-func (jb *job) sportsNearMeJob(cron gocron.Job) {
-	jb.l.Printf("running sports-near-me job....")
+func daysIn(month, year int) int {
+	return time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
+}
 
-	resp, err := http.Get("https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=2023&startDate=2023-07-01&endDate=2023-07-31&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref")
-	if err != nil {
-		jb.l.Printf("failed to get HTTP. error: %v", err)
-	}
-	defer resp.Body.Close()
+func createRequestUrl(month, year int) string {
+	days := daysIn(month, year)
+	monthstr := strconv.Itoa(month)
+	yearstr := strconv.Itoa(year)
+	daysStr := strconv.Itoa(days)
+	urlStr := "https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-" + daysStr + "&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref"
+	return urlStr
+}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		jb.l.Printf("failed to read all HTTP. error: %v", err)
-	}
-
-	var res ScheduleResponse
-	jsonErr := json.Unmarshal(body, &res)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
-
+func (jb *job) insertGamesdb(res ScheduleResponse) {
 	for i := range res.Dates {
 		lenGames := len(res.Dates[i].Games)
 		date := res.Dates[i].Date
@@ -136,4 +160,13 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 			})
 		}
 	}
+}
+
+func incrementMonth(month, year int) (int, int) {
+	if month == 13 {
+		month = 1
+		year = year + 1
+	}
+	month++
+	return month, year
 }
