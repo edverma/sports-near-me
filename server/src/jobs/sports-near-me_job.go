@@ -84,6 +84,36 @@ type ScheduleResponse struct {
 	Dates []Date `json:"dates"`
 }
 
+func (jb *job) sportsNearMeJob(cron gocron.Job) {
+	jb.l.Printf("running sports-near-me job....")
+	now := time.Now()
+	year := now.Year()
+	month := int(now.Month())
+	for loop := 0; loop < numMonthsToSetScheduleInfo; loop++ {
+		url := createRequestUrl(month, year)
+		resp, err := http.Get(url)
+		if err != nil {
+			jb.l.Printf("failed to get HTTP. error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			jb.l.Printf("failed to read all HTTP. error: %v", err)
+		}
+
+		var res ScheduleResponse
+		jsonErr := json.Unmarshal(body, &res)
+		if jsonErr != nil {
+			jb.l.Print(jsonErr)
+		}
+
+		jb.insertGamesdb(res)
+
+		month, year = incrementMonth(month, year)
+	}
+}
+
 func parseDate(str string) time.Time {
 	dateArr := strings.Split(str, "-")
 	dateArrInt := []int{}
@@ -139,34 +169,4 @@ func incrementMonth(month, year int) (int, int) {
 	}
 	month++
 	return month, year
-}
-
-func (jb *job) sportsNearMeJob(cron gocron.Job) {
-	jb.l.Printf("running sports-near-me job....")
-	now := time.Now()
-	year := now.Year()
-	month := int(now.Month())
-	for loop := 0; loop < numMonthsToSetScheduleInfo; loop++ {
-		url := createRequestUrl(month, year)
-		resp, err := http.Get(url)
-		if err != nil {
-			jb.l.Printf("failed to get HTTP. error: %v", err)
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			jb.l.Printf("failed to read all HTTP. error: %v", err)
-		}
-
-		var res ScheduleResponse
-		jsonErr := json.Unmarshal(body, &res)
-		if jsonErr != nil {
-			jb.l.Print(jsonErr)
-		}
-
-		jb.insertGamesdb(res)
-
-		month, year = incrementMonth(month, year)
-	}
 }
