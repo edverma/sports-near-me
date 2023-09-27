@@ -8,7 +8,8 @@ import (
 )
 
 type Game struct {
-	Id        string         `gorm:"primaryKey" json:"id"`
+	Id        string         `gorm:"primaryKey" json:"NotGameid"`
+	GameId    string         `gorm:"unique" json:"gameGuid"`
 	Date      time.Time      `json:"date"`
 	HomeTeam  string         `json:"home_team"`
 	AwayTeam  string         `json:"away_team"`

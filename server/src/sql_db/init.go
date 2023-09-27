@@ -112,6 +112,7 @@ func setupGame() []*Game {
 	return []*Game{
 		{
 			Id:       "1",
+			GameId:   "1",
 			Date:     time.Now(),
 			HomeTeam: "Gwinnett Stripers",
 			AwayTeam: "Beep Boops",

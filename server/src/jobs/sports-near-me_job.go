@@ -70,8 +70,9 @@ type Team struct {
 }
 
 type Games struct {
-	Teams Team  `json:"teams"`
-	Venue Venue `json:"venue"`
+	Teams  Team   `json:"teams"`
+	Venue  Venue  `json:"venue"`
+	GameId string `json:"gameGuid"`
 }
 
 type Date struct {
@@ -149,6 +150,7 @@ func (jb *job) insertGamesdb(res ScheduleResponse) {
 			game := res.Dates[i].Games[j]
 			jb.sqlClient.CreateGame(&sql_db.Game{
 				Id:       uuid.NewString(),
+				GameId:   game.GameId,
 				Date:     parseDate(date),
 				HomeTeam: game.Teams.Home.HomeTeamName.Name,
 				AwayTeam: game.Teams.Away.AwayTeamName.Name,
