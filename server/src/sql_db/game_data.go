@@ -3,8 +3,8 @@ package sql_db
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Game struct {
@@ -24,8 +24,10 @@ type Game struct {
 }
 
 func (c *Client) CreateGame(game *Game) error {
-	game.Id = uuid.NewString()
-	err := c.client.Create(game).Error
+	err := c.client.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "game_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"date", "home_team", "away_team", "venue", "address", "state", "city", "zipcode", "updated_at"}),
+	}).Create(game).Error
 	if err != nil {
 		c.l.Printf("failed to create new row in games table. error: %v", err)
 		return err

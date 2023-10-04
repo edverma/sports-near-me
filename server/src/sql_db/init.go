@@ -12,11 +12,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const logFileName = "server.log"
-const logPrefix = "sql_db: "
-
-var (
-	db = "sports-near-me.db"
+const (
+	logFileName = "server.log"
+	logPrefix   = "sql_db: "
+	db          = "sports-near-me.db"
 )
 
 type Client struct {
