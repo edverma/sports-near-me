@@ -172,7 +172,3 @@ func incrementMonth(month, year int) (int, int) {
 	month++
 	return month, year
 }
-
-func testUpdateGame() {
-
-}
