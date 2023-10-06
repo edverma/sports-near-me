@@ -91,28 +91,31 @@ func (jb *job) sportsNearMeJob(cron gocron.Job) {
 	year := now.Year()
 	month := int(now.Month())
 	for loop := 0; loop < numMonthsToSetScheduleInfo; loop++ {
-		url := createRequestUrl(month, year)
-		resp, err := http.Get(url)
-		if err != nil {
-			jb.l.Printf("failed to get HTTP. error: %v", err)
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			jb.l.Printf("failed to read all HTTP. error: %v", err)
-		}
-
-		var res ScheduleResponse
-		jsonErr := json.Unmarshal(body, &res)
-		if jsonErr != nil {
-			jb.l.Print(jsonErr)
-		}
-
-		jb.insertGamesdb(res)
-
 		month, year = incrementMonth(month, year)
+		daysInMonth := daysIn(month, year)
+		for dayLoop := 1; dayLoop <= daysInMonth; dayLoop++ {
+			url := createRequestUrl(month, year, dayLoop)
+			resp, err := http.Get(url)
+			if err != nil {
+				jb.l.Printf("failed to get HTTP. error: %v", err)
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				jb.l.Printf("failed to read all HTTP. error: %v", err)
+			}
+
+			var res ScheduleResponse
+			jsonErr := json.Unmarshal(body, &res)
+			if jsonErr != nil {
+				jb.l.Print(jsonErr)
+			}
+
+			jb.insertGamesdb(res)
+		}
 	}
+
 }
 
 func parseDate(str string) time.Time {
@@ -133,12 +136,11 @@ func daysIn(month, year int) int {
 	return time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
 }
 
-func createRequestUrl(month, year int) string {
-	days := daysIn(month, year)
+func createRequestUrl(month, year, day int) string {
 	monthstr := strconv.Itoa(month)
 	yearstr := strconv.Itoa(year)
-	daysStr := strconv.Itoa(days)
-	urlStr := "https://statsapi.mlb.com/api/v1/schedule?lang=en&sportId=11,12,13,14,15,16,5442&hydrate=team(venue(timezone,location)),venue(timezone,location),game(seriesStatus,seriesSummary,tickets,promotions,sponsorships,content(summary,media(epg))),seriesStatus,seriesSummary,decisions,person,linescore,broadcasts(all)&season=" + yearstr + "&startDate=" + yearstr + "-" + monthstr + "-01&endDate=" + yearstr + "-" + monthstr + "-" + daysStr + "&teamId=431&eventTypes=primary&scheduleTypes=games,events,xref"
+	dayStr := strconv.Itoa(day)
+	urlStr := "https://bdfed.stitch.mlbinfra.com/bdfed/transform-milb-schedule?stitch_env=prod&sortTemplate=5&sportId=11&&sportId=12&&sportId=13&&sportId=14&&sportId=16&startDate=" + yearstr + "-" + monthstr + "-" + dayStr + "&endDate=" + yearstr + "-" + monthstr + "-" + dayStr + "&gameType=E&&gameType=S&&gameType=R&&gameType=F&&gameType=D&&gameType=L&&gameType=W&&gameType=A&&gameType=C&language=en&leagueId=&contextTeamId=milb&teamId=&orgId="
 	return urlStr
 }
 
